@@ -18,6 +18,7 @@ int move_inf;
 
 bool light_flag = true;
 bool fan_up_flag = true;
+bool fan_sett_flag = false;
 
 
 
@@ -39,14 +40,18 @@ void longPressStop(){
   fan_up_flag = !fan_up_flag;
 }
 
+void doubleClick(){
+  fan_sett_flag = !fan_sett_flag;
+}
+
 
 void setup(){
   pinMode(LAMP_SETT_PIN, INPUT);
   pinMode(LAMP_PIN, OUTPUT);
   pinMode(FAN_PIN, OUTPUT);
-  //pinMode(BUTT_PIN, INPUT_PULLUP);
 
   button.attachClick(click1);
+  button.attachDoubleClick(doubleClick);
   //button.attachDuringLongPress(longPress);
   //button.attachLongPressStop(longPressStop);
 }
@@ -55,14 +60,22 @@ void setup(){
 
 void loop(){
   button.tick();
-  bright = map(analogRead(LAMP_SETT_PIN), 0, 1032, 0, 255);
+  bright = map(analogRead(LAMP_SETT_PIN), 0, 1023, 0, 255);
+
 
 
   if(light_flag){
     analogWrite(LAMP_PIN, bright);
+    if(fan_sett_flag){
+      analogWrite(FAN_PIN, 255);
+    }
+    else if(!fan_sett_flag){
+      analogWrite(FAN_PIN, 0);
+    }
   }
   else if(!light_flag){
     analogWrite(LAMP_PIN, 0);
+    analogWrite(FAN_PIN, 0);
   }  
 
   if(move_inf == 1){
