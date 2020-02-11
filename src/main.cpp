@@ -1,16 +1,13 @@
 #include <Arduino.h>
 #include <OneButton.h>
 
-#define LAMP_SETT_PIN A1
-#define LAMP_PIN 0
-#define PIR_PIN 3
-#define FAN_PIN 4
-#define BUTT_PIN 1
-#define TIMER 600000
-#define TIMER_SEARCH 10000
-#define TIMER_EFFECT 10
+#include "main.h"
+#include "light.h"
+#include "fan.h"
 
 OneButton button(BUTT_PIN, false);
+Light lamp(LAMP_PIN, LAMP_SETT_PIN);
+Fan fan(FAN_PIN);
 
 unsigned long timer;
 unsigned long search_timer;
@@ -27,38 +24,26 @@ bool search_flag;
 
 
 void click1(){
-  light_flag = !light_flag;
-  search_timer = millis();
+  if (lamp.isOn()) {
+    lamp.off();
+  }
+  else {
+    lamp.on();
+  }
 }
 
 void doubleClick(){
-  fan_flag = !fan_flag;
-}
-
-
-
-void switchEffectOn(){
-  for(int i = 0; i <= bright; i++){
-    analogWrite(LAMP_PIN, i);
-    delay(10);
+  if (fan.isOn()) {
+    fan.off();
+  }
+  else {
+    fan.on();
   }
 }
-
-void switchEffectOff(){
-  for(int i = bright; i >= 0 ; i--){
-    analogWrite(LAMP_PIN, i);
-    delay(10);
-  }
-}
-
 
 
 
 void setup(){
-  pinMode(LAMP_SETT_PIN, INPUT);
-  pinMode(LAMP_PIN, OUTPUT);
-  pinMode(FAN_PIN, OUTPUT);
-
   button.attachClick(click1);
   button.attachDoubleClick(doubleClick);
 }
@@ -67,58 +52,62 @@ void setup(){
 
 void loop(){
   button.tick();
-  bright = map(analogRead(LAMP_SETT_PIN), 0, 1032, 0, 255);
-  move_inf = digitalRead(PIR_PIN);
+  lamp.update();
+  fan.update(lamp.getBrightness());
+
+  // bright = map(analogRead(LAMP_SETT_PIN), 0, 1032, 0, 255);
+  // move_inf = digitalRead(PIR_PIN);
 
 
-  if(light_flag){
-    if(!effect_flag){
-      effect_flag = true;
-      switchEffectOn();
-    }
+  // if(light_flag){
+  //   if(!effect_flag){
+  //     effect_flag = true;
+  //     switchEffectOn();
+  //   }
 
-    analogWrite(LAMP_PIN, bright);
-    if(bright >= 200){
-      fan_flag = true;
-    }
+  //   analogWrite(LAMP_PIN, bright);
+  //   if(bright >= 200){
+  //     fan_flag = true;
+  //   }
 
-    if(fan_flag){
-      analogWrite(FAN_PIN, 255);
-    }
-    else if(!fan_flag){
-      analogWrite(FAN_PIN, 0);
-    }
+  //   if(fan_flag){
+  //     analogWrite(FAN_PIN, 255);
+  //   }
+  //   else if(!fan_flag){
+  //     analogWrite(FAN_PIN, 0);
+  //   }
 
-    if(move_inf == 1){
+  //   if(move_inf == 1){
+  //     timer = millis();
+  //   }
+  if (lamp.isOn()) {
+    if(millis() - timer > 600000){
       timer = millis();
-    }
-    if(millis() - timer > TIMER){
-      timer = millis();
-      light_flag = false;
-      search_timer = millis();
+      lamp.off();
+      fan.off();
     }
   }
 
 
-  else if(!light_flag){
-    if(effect_flag){
-      effect_flag = false;
-      switchEffectOff();
-    }
-    analogWrite(LAMP_PIN, 0);
-    analogWrite(FAN_PIN, 0);
+  // else if(!light_flag){
+  //   if(effect_flag){
+  //     effect_flag = false;
+  //     switchEffectOff();
+  //   }
+  //   analogWrite(LAMP_PIN, 0);
+  //   analogWrite(FAN_PIN, 0);
 
-    if(!search_flag){
-      if(millis() - search_timer > TIMER_SEARCH){
-        search_timer = millis();
-        search_flag = true;
-      }
-    }
-    else if(search_flag){
-      if(move_inf == 1){
-        light_flag = true;
-        search_flag = false;
-      }
-    }
-  }
+  //   if(!search_flag){
+  //     if(millis() - search_timer > TIMER_SEARCH){
+  //       search_timer = millis();
+  //       search_flag = true;
+  //     }
+  //   }
+  //   else if(search_flag){
+  //     if(move_inf == 1){
+  //       light_flag = true;
+  //       search_flag = false;
+  //     }
+  //   }
+  // }
 }
